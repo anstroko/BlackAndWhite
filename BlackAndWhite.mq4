@@ -27,6 +27,8 @@ double S;
 double CurSum;
 double RiskSumm;
 double SL_points;
+bool OpenBuy;
+bool OpenSell;
 int Minutes,Hours;
 double SL;
 int init(){
@@ -77,14 +79,14 @@ if ((Hours<=CurrentHour)&&(Minutes<CurrentMinute)&& (OpenOrder==true)){ OrderTTT
 if ((Hours>=CurrentHour)&&(Minutes>CurrentMinute)&& (OpenOrder==false)){ OrderTTTT="Ќазначенное врем€ еще не настало,ордер не открыт!";}
 if ((Hours>=CurrentHour)&&(Minutes>CurrentMinute)&& (OpenOrder==true)){ OrderTTTT="Ќазначенное врем€ еще не настало,ордер открыт!";}
 
- OpenOrder=false;
+ OpenOrder=false;OpenSell=false;OpenBuy=false;
    for(int inn=0;inn<OrdersTotal();inn++)
      {      if(OrderSelect(inn,SELECT_BY_POS)==true)
         {
          if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
            {
-           OpenOrder=true;
-           
+          if (OrderType()==OP_BUY) {OpenOrder=true; OpenBuy=true;}
+           if (OrderType()==OP_SELL) {OpenOrder=true; OpenSell=true;}
     
            }
         }
@@ -94,11 +96,11 @@ RefreshRates();
 if ((Hour()==Hours)&&(Minute()==Minutes)&&(OpenOrder==false)){
 
 
-if (((Ask-Open[0])>MinimumCandleSize*k*Point)&&(BuyOrSell==true))
+if (((Ask-Open[0])>MinimumCandleSize*k*Point)&&(OpenBuy==false)&&(BuyOrSell==true))
 {
 
 
-if ((MM==true)){MMTrueFunctionBuy();}
+if ((MM==true)){MMTrueFunctionBuy();}else{Koef=1;}
 SL_points=Low[0]-Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_points,Ask+MinimumTP*k*Point,Comments,Magic_Number,0,Blue) < 0) 
 
@@ -109,7 +111,7 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_poi
 
 }
 if (((Open[0]-Bid)>MinimumCandleSize*k*Point)&&(BuyOrSell==false))
-{if ((MM==true)){MMTrueFunctionSell();}
+{if ((MM==true)){MMTrueFunctionSell();}else{Koef=1;}
 SL_points=High[0]+Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_points,Bid-MinimumTP*k*Point,Comments,Magic_Number,0,Red) < 0) 
 
@@ -125,14 +127,26 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_po
  
  
    if(!isNewBar())return(0);
+   if (OpenOrder==true){
+    for(int q=0;q<OrdersTotal();q++)
+     {      if(OrderSelect(q,SELECT_BY_POS)==true)
+        {
+         if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
+           {
+          if ((OrderType()==OP_BUY)&&((Open[0]-Ask)>0)) {if((Ask-OrderOpenPrice())>MinimumTP*Point*k){OrderClose(OrderTicket(),OrderLots(),Bid,3*k,Black);}}
+          if ((OrderType()==OP_SELL)&&((Ask-Open[0])>0)) {if((OrderOpenPrice()-Bid)>MinimumTP*Point*k){OrderClose(OrderTicket(),OrderLots(),Ask,3*k,Black);}}
+    
+           }
+        }
+     }  
+   }
+   
 if (OtstupMinute==0){
-
-
-if (((Ask-Open[0])>MinimumCandleSize*k*Point)&&(BuyOrSell==true))
+if (((Ask-Open[0])>MinimumCandleSize*k*Point)&&(OpenSell==false)&&(BuyOrSell==true))
 {
 
 
-if ((MM==true)){MMTrueFunctionBuy();}
+if ((MM==true)){MMTrueFunctionBuy();} else{Koef=1;}
 SL_points=Low[0]-Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_points,Ask+MinimumTP*k*Point,Comments,Magic_Number,0,Blue) < 0) 
 
@@ -143,7 +157,7 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_poi
 
 }
 if (((Open[0]-Bid)>MinimumCandleSize*k*Point)&&(BuyOrSell==false))
-{if ((MM==true)){MMTrueFunctionSell();}
+{if ((MM==true)){MMTrueFunctionSell();} else{Koef=1;}
 SL_points=High[0]+Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_points,Bid-MinimumTP*k*Point,Comments,Magic_Number,0,Red) < 0) 
 
