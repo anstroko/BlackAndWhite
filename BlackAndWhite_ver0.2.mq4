@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 extern string   Type="true=buy,false=sell";
 extern bool     BuyOrSell=true;
-extern int OtstupMinuteOpen=10;
+extern int OtstupMinute=10;
 extern int OtstupMinuteClose=10;
-extern double Otstup=5;
+extern int Otstup=5;
 extern bool MM=true;
 extern double VirtualDepo=1200;
 extern double RiskOnTreid=1;
@@ -17,13 +17,6 @@ extern int MinimumCandleSize=10;
 extern int Magic_Number=12345;
 extern string Comments="Default";
 extern bool DeleteExpert=true;
-extern bool IgnoreGap=true;
-extern string Trall="true=TpaJIum,false=He TpaJIum";
-extern bool UseTrall=false;
-extern int StartTrall=2;
-extern double OtstupTrall=10;
-extern int CandleBackTrall=1 ;
-
 #include <WinUser32.mqh>
 string OrderT;
 string OrderTTTT;
@@ -35,15 +28,10 @@ double S;
 double CurSum;
 double RiskSumm;
 double SL_points;
-double CloseCandle;
 bool OpenBuy;
 bool OpenSell;
-int Minutes,Hours;
-int Minutes1,Hours1;
-int CurrentHour;
-int CurrentMinute;
+int Minutes,Hours,Minutes1,Hours1;
 double SL;
-int CountDay;
 int init(){
    if((Digits==3)||(Digits==5)) { k=10;}
    if((Digits==4)||(Digits==2)) { k=1;}
@@ -57,23 +45,8 @@ int init(){
  return(0);}
  
  int start(){
-if (OpenOrder==true){
- OpenOrder=false;OpenSell=false;OpenBuy=false;
-   for(int m=0;m<OrdersTotal();m++)
-     {      if(OrderSelect(m,SELECT_BY_POS)==true)
-        {
-         if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
-           {
-          if (OrderType()==OP_BUY) {OpenOrder=true; OpenBuy=true;}
-          if (OrderType()==OP_SELL) {OpenOrder=true; OpenSell=true;}
-    
-           }
-        }
-     }
-}
-CurrentHour=Hour();
-CurrentMinute=Minute();
-
+int CurrentHour=Hour();
+int CurrentMinute=Minute();
   ObjectCreate("label_object1",OBJ_LABEL,0,0,0);
 ObjectSet("label_object1",OBJPROP_CORNER,4);
 ObjectSet("label_object1",OBJPROP_XDISTANCE,10);
@@ -113,96 +86,109 @@ if ((Hours<=CurrentHour)&&(Minutes<CurrentMinute)&& (OpenOrder==true)){ OrderTTT
 if ((Hours>=CurrentHour)&&(Minutes>CurrentMinute)&& (OpenOrder==false)){ OrderTTTT="Назначенное время еще не настало,ордер не открыт!";}
 if ((Hours>=CurrentHour)&&(Minutes>CurrentMinute)&& (OpenOrder==true)){ OrderTTTT="Назначенное время еще не настало,ордер открыт!";}
 
+ OpenOrder=false;OpenSell=false;OpenBuy=false;
+   for(int inn=0;inn<OrdersTotal();inn++)
+     {      if(OrderSelect(inn,SELECT_BY_POS)==true)
+        {
+         if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
+           {
+          if (OrderType()==OP_BUY) {OpenOrder=true; OpenBuy=true;}
+           if (OrderType()==OP_SELL) {OpenOrder=true; OpenSell=true;}
+    
+           }
+        }
+     }
+ 
 RefreshRates();
-if ((CurrentHour==Hours)&&(CurrentMinute==Minutes)&&(OtstupMinuteOpen!=0)&&(OpenOrder==false)){
-if (IgnoreGap==false) {CloseCandle=Open[0];} else {CloseCandle=Close[1];}
-if (((Ask-CloseCandle)>MinimumCandleSize*k*Point)&&(OpenBuy==false)&&(BuyOrSell==true))
+if ((CurrentHour==Hours)&&(CurrentMinute==Minutes)&&(OtstupMinute!=0)&&(OpenOrder==false)){
+
+
+if (((Ask-Open[0])>MinimumCandleSize*k*Point)&&(OpenBuy==false)&&(BuyOrSell==true))
 {
+
+
 if ((MM==true)){MMTrueFunctionBuy();}else{Koef=1;}
 SL_points=Low[0]-Otstup*Point*k;
 Print("Открываем ордер на покупку");
-CountDay=0;OpenOrder=true;
-if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_points,NULL,Comments,Magic_Number,0,Blue) < 0)
-      {Alert("Ошибка открытия позиции № ", GetLastError()); }}
+if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_points,NULL,Comments,Magic_Number,0,Blue) < 0) 
+
+      { 
+        Alert("Ошибка открытия позиции № ", GetLastError());
+      }}
+
+
 }
-if (((CloseCandle-Bid)>MinimumCandleSize*k*Point)&&(BuyOrSell==false))
+if (((Open[0]-Bid)>MinimumCandleSize*k*Point)&&(BuyOrSell==false))
 {
 Print("Открываем ордер на продажу");
-CountDay=0;OpenOrder=true;
+
 if ((MM==true)){MMTrueFunctionSell();}else{Koef=1;}
 SL_points=High[0]+Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_points,NULL,Comments,Magic_Number,0,Red) < 0) 
-      {Alert("Ошибка открытия позиции № ", GetLastError());}}
+
+      { 
+        Alert("Ошибка открытия позиции № ", GetLastError());
+      }}
+
+
 }
+
 }
  
-if ((CurrentHour==Hours1)&&(CurrentMinute==Minutes1)&&(OtstupMinuteClose!=0)&&(OpenOrder==true)){ 
-CountDay=CountDay+1;
+ if ((CurrentHour==Hours1)&&(CurrentMinute==Minutes1)&&(OtstupMinuteClose!=0)&&(OpenOrder==true)){ 
 
-if (IgnoreGap==false) {CloseCandle=Open[1];} else {CloseCandle=Close[1];}
  for(int qq=0;qq<OrdersTotal();qq++)
      {      if(OrderSelect(qq,SELECT_BY_POS)==true)
         {   
          if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
            {
-          if ((OrderType()==OP_BUY)&&((CloseCandle-Ask)>0)&&(UseTrall==false)) {if((Ask-OrderOpenPrice())>MinimumTP*Point*k){
+          if ((OrderType()==OP_BUY)&&((Open[0]-Ask)>0)) {if((Ask-OrderOpenPrice())>MinimumTP*Point*k){
           Print("Цена прошла расстояние MinimumTP,закрываем ордер BUY");
           
           OrderClose(OrderTicket(),OrderLots(),Bid,3*k,Black);}}
-          if ((OrderType()==OP_SELL)&&((Ask-Open[1])>0)&&(UseTrall==false)) {
+          if ((OrderType()==OP_SELL)&&((Ask-Open[0])>0)) {
           
           if((OrderOpenPrice()-Bid)>MinimumTP*Point*k){
                     Print("Цена прошла расстояние MinimumTP,закрываем ордер SELL");
           OrderClose(OrderTicket(),OrderLots(),Ask,3*k,Black);}}
-if ((OrderType()==OP_BUY)&&((Ask-(CloseCandle-(OtstupTrall*Point*k)))>0)&&(UseTrall==true)&&(CountDay>=StartTrall))
-          {
-          if (OrderStopLoss()<(Low[CandleBackTrall-1]-(OtstupTrall*Point*k))){Print("Low свечи "+CandleBackTrall+" больше стоплоса, переносим тралл");OrderModify(OrderTicket(),OrderOpenPrice(),Low[CandleBackTrall-1]-OtstupTrall*Point*k,OrderTakeProfit(),0,Orange);}}
-          if ((OrderType()==OP_SELL)&&(((High[CandleBackTrall-1]+OtstupTrall*Point*k)-Ask)>0)&&(UseTrall==true)&&(CountDay>=StartTrall)) {   
-          if(OrderStopLoss()>(High[CandleBackTrall-1]+(OtstupTrall*Point*k))){
-          Print("High свечи "+CandleBackTrall+" меньше стоплоса, переносим тралл");
-          OrderModify(OrderTicket(),OrderOpenPrice(),High[CandleBackTrall-1]+OtstupTrall*Point*k,OrderTakeProfit(),0,Orange);}} 
+ 
            }
         }
      }  
 }
 
+ 
+ 
+ 
+ 
+ 
    if(!isNewBar())return(0);
    if ((OpenOrder==true)&&(OtstupMinuteClose==0)){
-   Print("Zdes");
-   CountDay=CountDay+1; 
-          if (IgnoreGap==false) {CloseCandle=Open[1];} else {CloseCandle=Close[2];}
     for(int q=0;q<OrdersTotal();q++)
      {      if(OrderSelect(q,SELECT_BY_POS)==true)
         {
-         if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number))
+         if((OrderSymbol()==Symbol())&&(OrderMagicNumber()==Magic_Number) )
            {
-          if ((OrderType()==OP_BUY)&&((CloseCandle-Close[1])>0)&&(UseTrall==false)) {if((Ask-OrderOpenPrice())>MinimumTP*Point*k){
+          if ((OrderType()==OP_BUY)&&((Open[1]-Close[1])>0)) {if((Ask-OrderOpenPrice())>MinimumTP*Point*k){
           Print("Цена прошла расстояние MinimumTP,закрываем ордер BUY");
           
           OrderClose(OrderTicket(),OrderLots(),Bid,3*k,Black);}}
-          if ((OrderType()==OP_SELL)&&((Close[1]-CloseCandle)>0)&&(UseTrall==false)) {
+          if ((OrderType()==OP_SELL)&&((Close[1]-Open[1])>0)) {
           
           if((OrderOpenPrice()-Bid)>MinimumTP*Point*k){
                     Print("Цена прошла расстояние MinimumTP,закрываем ордер SELL");
           OrderClose(OrderTicket(),OrderLots(),Ask,3*k,Black);}}
-          if ((OrderType()==OP_BUY)&&((Ask-(CloseCandle-(OtstupTrall*Point*k)))>0)&&(UseTrall==true)&&(CountDay>=StartTrall))
-          {
-          if (OrderStopLoss()<(Low[CandleBackTrall]-(OtstupTrall*Point*k))){Print("Low свечи "+CandleBackTrall+" больше стоплоса, переносим тралл");OrderModify(OrderTicket(),OrderOpenPrice(),Low[CandleBackTrall]-OtstupTrall*Point*k,OrderTakeProfit(),0,Orange);}}
-          if ((OrderType()==OP_SELL)&&(((High[CandleBackTrall]+OtstupTrall*Point*k)-Ask)>0)&&(UseTrall==true)&&(CountDay>=StartTrall)) {   
-          if(OrderStopLoss()>(High[CandleBackTrall]+(OtstupTrall*Point*k))){
-          Print("High свечи "+CandleBackTrall+" меньше стоплоса, переносим тралл");
-          OrderModify(OrderTicket(),OrderOpenPrice(),High[CandleBackTrall]+OtstupTrall*Point*k,OrderTakeProfit(),0,Orange);}} 
+    
            }
         }
      }  
    }
    
-if ((OtstupMinuteOpen==0)&&(OpenOrder==false)){
-   if (IgnoreGap==false) {CloseCandle=Open[1];} else {CloseCandle=Close[2];}
-if (((Close[1]-CloseCandle)>MinimumCandleSize*k*Point)&&(BuyOrSell==true))
+if (OtstupMinute==0){
+if (((Close[1]-Open[1])>MinimumCandleSize*k*Point)&&(OpenBuy==false)&&(BuyOrSell==true))
 {
 Print("Открываем ордер на покупку");
-CountDay=0;OpenOrder=true;
+
 if ((MM==true)){MMTrueFunctionBuy();} else{Koef=1;}
 SL_points=Low[1]-Otstup*Point*k;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_points,NULL,Comments,Magic_Number,0,Blue) < 0) 
@@ -213,11 +199,10 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUY,Lot*Koef,Ask,3*k,SL_poi
 
 
 }
-if (((CloseCandle-Close[1])>MinimumCandleSize*k*Point)&&(OpenSell==false)&&(BuyOrSell==false))
+if (((Open[1]-Close[1])>MinimumCandleSize*k*Point)&&(OpenSell==false)&&(BuyOrSell==false))
 {if ((MM==true)){MMTrueFunctionSell();} else{Koef=1;}
 SL_points=High[1]+Otstup*Point*k;
 Print("Открываем ордер на продажу");
-CountDay=0;OpenOrder=true;
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_points,NULL,Comments,Magic_Number,0,Red) < 0) 
 
       { 
@@ -227,31 +212,33 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,Bid,3*k,SL_po
 
 }}   
    
-if ((OtstupMinuteOpen>0)&&(OtstupMinuteOpen<61))
+if ((OtstupMinute>0)&&(OtstupMinute<61))
    {Hours=23;
-   Minutes=60-OtstupMinuteOpen;
+   Minutes=60-OtstupMinute;
+  
    }
-if ((OtstupMinuteOpen>=61)&&(OtstupMinuteOpen<121))
+if ((OtstupMinute>=61)&&(OtstupMinute<121))
    {Hours=22;
-   Minutes=120-OtstupMinuteOpen;}
-if ((OtstupMinuteOpen>=121)&&(OtstupMinuteOpen<181))
+   Minutes=120-OtstupMinute;}
+if ((OtstupMinute>=121)&&(OtstupMinute<181))
    {Hours=21;
-   Minutes=180-OtstupMinuteOpen;}
-if ((OtstupMinuteOpen>=181)&&(OtstupMinuteOpen<241))
+   Minutes=180-OtstupMinute;}
+if ((OtstupMinute>=181)&&(OtstupMinute<241))
    {Hours=20;
-   Minutes=240-OtstupMinuteOpen;}
-if ((OtstupMinuteOpen>=240)&&(OtstupMinuteOpen<301))
+   Minutes=240-OtstupMinute;}
+if ((OtstupMinute>=240)&&(OtstupMinute<301))
    {Hours=19;
-   Minutes=300-OtstupMinuteOpen;}
-if ((OtstupMinuteOpen>=300)&&(OtstupMinuteOpen<361))
+   Minutes=300-OtstupMinute;}
+if ((OtstupMinute>=300)&&(OtstupMinute<361))
    {Hours=18;
-   Minutes=360-OtstupMinuteOpen;}
+   Minutes=360-OtstupMinute;}
  
  
  
-if ((OtstupMinuteOpen>0)&&(OtstupMinuteOpen<61))
-   {Hours=23;
-   Minutes=60-OtstupMinuteOpen;
+ 
+if ((OtstupMinuteClose>0)&&(OtstupMinuteClose<61))
+   {Hours1=23;
+   Minutes1=60-OtstupMinuteClose;
   
    }
 if ((OtstupMinuteClose>=61)&&(OtstupMinuteClose<121))
@@ -273,7 +260,7 @@ if ((OtstupMinuteClose>=300)&&(OtstupMinuteClose<361))
  
  double MMTrueFunctionBuy ()
 { RiskSumm=(AccountBalance()+VirtualDepo)*RiskOnTreid/100;
-if (OtstupMinuteOpen!=0){SL_points=Low[0]-Otstup*Point*k;}
+if (OtstupMinute!=0){SL_points=Low[0]-Otstup*Point*k;}
 else {SL_points=Low[1]-Otstup*Point*k;}
 CurSum=0;
 Koef=1;
@@ -289,7 +276,7 @@ return (Koef);}
 
 double MMTrueFunctionSell ()
 { RiskSumm=(AccountBalance()+VirtualDepo)*RiskOnTreid/100;
-if (OtstupMinuteOpen!=0){SL_points=High[0]+Otstup*Point*k;}
+if (OtstupMinute!=0){SL_points=High[0]+Otstup*Point*k;}
 else {SL_points=High[1]+Otstup*Point*k;}
 CurSum=0;
 Koef=1;
