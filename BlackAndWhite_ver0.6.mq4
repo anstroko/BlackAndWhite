@@ -40,7 +40,7 @@ double CurSum;
 double RiskSumm;
 double SL_points;
 bool OpenBuy;
-int ReOpenCount;
+int ReOpenCount=0;
 bool OpenSell;
 double OpenPrice;
 double Cl;
@@ -120,8 +120,14 @@ ReCountBuy=0;ReCountSell=0;
         }
      }
 //ReopenOrders+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//Print(OpenPrice+">"+Low[0]);
-if ((ReOpenStopOrders==true)&&(CountBuy>ReCountBuy)&&(SL_points>=Low[0])&&(OpenPrice>Ask)&&(ReOpenCount==0)&&(OpenPrice!=0)){
+
+if ((ReOpenStopOrders==true)&&(CountBuy>ReCountBuy)
+&&(NormalizeDouble(SL_points,5)>=NormalizeDouble(Low[0],5))
+&&(OpenPrice>Ask)
+&&(ReOpenCount==0)
+&&(OpenPrice!=0)
+)
+{
 Print("Ордер выбит по стопу, открываем отложенный ордер на покупку");
 if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_BUYSTOP,Lot*Koef,OpenPrice,3*k,SL_points,NULL,Comments,Magic_Number,0,Blue) < 0) 
       { 
@@ -155,6 +161,7 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELLSTOP,Lot*Koef,OpenPrice
 //Если время настало++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 RefreshRates();
 if ((CurrentHour==Hours)&&(CurrentMinute==Minutes)&&(OtstupMinute!=0)&&(OpenOrder==false)){
+OpenPrice=0;
 if (IgnoreGap==true){Cl=Close[1];}else{Cl=Open[0];}
 //Buy+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -232,6 +239,7 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,OpenPrice,3*k
 }
 
    if(!isNewBar())return(0);
+   
  DeleteAllOrders();  ReOpenCount=0;
   // OpenPrice=0;
 //Закрытие ордера, если цена прошла MinimumTP++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
@@ -252,7 +260,7 @@ if (IsTradeAllowed()) { if(    OrderSend(Symbol(),OP_SELL,Lot*Koef,OpenPrice,3*k
      }  
    }
 //Если отступа нет +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++      
-if (OtstupMinute==0){
+if (OtstupMinute==0){OpenPrice=0;
 if (IgnoreGap==true){Cl=Close[2];}else{Cl=Open[1];}
 //Buy+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if (((Close[1]-Cl)>MinimumCandleSize*k*Point)&&(CountBuy<CountOfOpenOrders)&&(BuyOrSell==true))
